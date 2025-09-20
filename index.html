@@ -102,11 +102,48 @@
             padding: 24px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             transition: transform 0.3s ease, background 0.3s ease;
+            position: relative;
+            cursor: help;
         }
         
         .stat-card:hover {
             transform: translateY(-5px);
             background: rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-bottom: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        .stat-card:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
         }
         
         .stat-header {
@@ -254,7 +291,7 @@
     </div>
     
     <script>
-        // Stats configuration
+        // Stats configuration with comparison functions
         const statsConfig = [
             {
                 id: 'heartbeats',
@@ -272,6 +309,13 @@
                     if (activity === 'active') rate -= 5;
                     if (activity === 'very_active') rate -= 10;
                     return Math.floor(age * 365.25 * 24 * 60 * rate);
+                },
+                comparison: (value) => {
+                    const bloodPerBeat = 0.07; // litres per beat
+                    const totalBlood = Math.floor(value * bloodPerBeat);
+                    const pools = Math.floor(totalBlood / 2500); // Olympic pool = 2,500,000L
+                    if (pools > 0) return `Pumped ${totalBlood.toLocaleString()}L of blood - enough to fill ${pools} Olympic swimming pools!`;
+                    return `Pumped ${totalBlood.toLocaleString()} litres of blood through your body`;
                 }
             },
             {
@@ -281,6 +325,13 @@
                 calculate: (age) => {
                     const rate = age < 12 ? 20 : (age < 65 ? 16 : 18);
                     return Math.floor(age * 365.25 * 24 * 60 * rate);
+                },
+                comparison: (value) => {
+                    const airPerBreath = 0.5; // litres per breath
+                    const totalAir = Math.floor(value * airPerBreath);
+                    const balloons = Math.floor(totalAir / 33000); // Hot air balloon = 33,000L
+                    if (balloons > 1000) return `Inhaled ${totalAir.toLocaleString()}L of air - enough to fill ${balloons.toLocaleString()} hot air balloons!`;
+                    return `Inhaled ${totalAir.toLocaleString()} litres of air into your lungs`;
                 }
             },
             {
@@ -293,13 +344,30 @@
                     if (activity === 'active') dailySteps = 10000;
                     if (activity === 'very_active') dailySteps = 15000;
                     return Math.floor(age * 365.25 * dailySteps);
+                },
+                comparison: (value) => {
+                    const metersPerStep = 0.75; // average step length
+                    const totalMeters = Math.floor(value * metersPerStep);
+                    const earthCircumference = 40075000; // meters
+                    const moonDistance = 384400000; // meters
+                    const timesAroundEarth = (totalMeters / earthCircumference).toFixed(1);
+                    if (totalMeters > moonDistance) {
+                        return `Walked ${totalMeters.toLocaleString()}m - that's ${timesAroundEarth} times around Earth, or ${(totalMeters/moonDistance).toFixed(1)} trips to the moon!`;
+                    }
+                    return `Walked ${totalMeters.toLocaleString()}m - that's ${timesAroundEarth} times around planet Earth!`;
                 }
             },
             {
                 id: 'blinks',
                 title: 'Eye Blinks',
                 icon: '👁️',
-                calculate: (age) => Math.floor(age * 365.25 * 24 * 60 * 17)
+                calculate: (age) => Math.floor(age * 365.25 * 24 * 60 * 17),
+                comparison: (value) => {
+                    const blinkDuration = 0.1; // seconds per blink
+                    const totalBlinkTime = Math.floor(value * blinkDuration);
+                    const days = Math.floor(totalBlinkTime / 86400);
+                    return `Your eyes were closed for ${totalBlinkTime.toLocaleString()} seconds total - that's ${days} days with your eyes shut!`;
+                }
             },
             {
                 id: 'words',
@@ -310,13 +378,28 @@
                     if (activity === 'sedentary') daily = 12000;
                     if (activity === 'very_active') daily = 20000;
                     return Math.floor(age * 365.25 * daily);
+                },
+                comparison: (value) => {
+                    const bibleWords = 783137; // words in the Bible
+                    const bibles = (value / bibleWords).toFixed(1);
+                    const avgWordsPerMinute = 150; // speaking rate
+                    const minutesSpoken = Math.floor(value / avgWordsPerMinute);
+                    const daysSpoken = Math.floor(minutesSpoken / 1440);
+                    return `Spoke ${bibles} times the entire Bible, spending ${daysSpoken} full days of your life talking!`;
                 }
             },
             {
                 id: 'meals',
                 title: 'Meals Eaten',
                 icon: '🍽️',
-                calculate: (age) => Math.floor(age * 365.25 * 3)
+                calculate: (age) => Math.floor(age * 365.25 * 3),
+                comparison: (value) => {
+                    const avgMealWeight = 0.5; // kg per meal
+                    const totalFood = Math.floor(value * avgMealWeight);
+                    const elephantWeight = 6000; // kg
+                    const elephants = (totalFood / elephantWeight).toFixed(1);
+                    return `Consumed ${totalFood.toLocaleString()}kg of food - that weighs as much as ${elephants} elephants!`;
+                }
             },
             {
                 id: 'sleep',
@@ -328,13 +411,24 @@
                     if (age < 18) daily = 9;
                     if (age > 65) daily = 7;
                     return Math.floor(age * 365.25 * daily);
+                },
+                comparison: (value) => {
+                    const years = (value / 8760).toFixed(1); // hours per year
+                    const percentOfLife = ((value / (age * 8760)) * 100).toFixed(0);
+                    return `Slept for ${years} years total - that's ${percentOfLife}% of your entire life in dreamland!`;
                 }
             },
             {
                 id: 'laughs',
                 title: 'Times Laughed',
                 icon: '😂',
-                calculate: (age) => Math.floor(age * 365.25 * 15)
+                calculate: (age) => Math.floor(age * 365.25 * 15),
+                comparison: (value) => {
+                    const secondsPerLaugh = 6; // average laugh duration
+                    const totalLaughSeconds = value * secondsPerLaugh;
+                    const hours = Math.floor(totalLaughSeconds / 3600);
+                    return `Spent ${hours.toLocaleString()} hours of your life laughing - laughter truly is the best medicine!`;
+                }
             }
         ];
         
@@ -363,6 +457,7 @@
             
             statsConfig.forEach(stat => {
                 const value = stat.calculate(age, gender, activity);
+                const comparison = stat.comparison ? stat.comparison(value) : '';
                 
                 const card = document.createElement('div');
                 card.className = 'stat-card';
@@ -375,6 +470,7 @@
                         <div class="stat-number">${formatNumber(value)}</div>
                         <div class="stat-details">${value.toLocaleString()}</div>
                     </div>
+                    ${comparison ? `<div class="tooltip">${comparison}</div>` : ''}
                 `;
                 
                 statsGrid.appendChild(card);
