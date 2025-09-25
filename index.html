@@ -283,8 +283,10 @@
         <div class="coming-soon">
             <h2>🚀 More Features Coming Soon!</h2>
             <p>AI-powered custom stats, sharing features, achievements, and so much more. Be the first to know when we launch new features!</p>
-            <form class="email-form" id="emailForm">
-                <input type="email" class="email-input" placeholder="Enter your email" required>
+            <form class="email-form" action="https://formspree.io/f/meorozar" method="POST">
+                <input type="email" name="email" class="email-input" placeholder="Enter your email" required>
+                <input type="hidden" name="_next" value="https://statslife.app">
+                <input type="hidden" name="_subject" value="New StatsLife Signup">
                 <button type="submit" class="email-button">Notify Me</button>
             </form>
         </div>
@@ -482,13 +484,8 @@
         document.getElementById('gender').addEventListener('change', updateStats);
         document.getElementById('activity').addEventListener('change', updateStats);
         
-        // Email form
-        document.getElementById('emailForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = this.querySelector('.email-input').value;
-            alert(`Thanks! We'll notify ${email} when new features launch!`);
-            this.querySelector('.email-input').value = '';
-        });
+        // Email form - now handled by Netlify
+        // No JavaScript needed - Netlify handles the form submission
         
         // Initialize stats
         updateStats();
