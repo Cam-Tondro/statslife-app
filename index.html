@@ -285,8 +285,6 @@
             <p>AI-powered custom stats, sharing features, achievements, and so much more. Be the first to know when we launch new features!</p>
             <form class="email-form" action="https://formspree.io/f/meorozar" method="POST">
                 <input type="email" name="email" class="email-input" placeholder="Enter your email" required>
-                <input type="hidden" name="_next" value="https://statslife.app">
-                <input type="hidden" name="_subject" value="New StatsLife Signup">
                 <button type="submit" class="email-button">Notify Me</button>
             </form>
         </div>
@@ -484,8 +482,57 @@
         document.getElementById('gender').addEventListener('change', updateStats);
         document.getElementById('activity').addEventListener('change', updateStats);
         
-        // Email form - now handled by Netlify
-        // No JavaScript needed - Netlify handles the form submission
+        // Email form with AJAX submission (stays on page)
+        const emailForm = document.querySelector('.email-form');
+        if (emailForm) {
+            emailForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('.email-button');
+                const originalText = submitButton.textContent;
+                
+                // Show loading state
+                submitButton.textContent = 'Sending...';
+                submitButton.disabled = true;
+                
+                try {
+                    const response = await fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        // Success!
+                        submitButton.textContent = 'Thank You!';
+                        submitButton.style.background = '#10b981';
+                        this.querySelector('.email-input').value = '';
+                        
+                        // Reset after 3 seconds
+                        setTimeout(() => {
+                            submitButton.textContent = originalText;
+                            submitButton.style.background = '';
+                            submitButton.disabled = false;
+                        }, 3000);
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                } catch (error) {
+                    // Error handling
+                    submitButton.textContent = 'Try Again';
+                    submitButton.style.background = '#ef4444';
+                    
+                    setTimeout(() => {
+                        submitButton.textContent = originalText;
+                        submitButton.style.background = '';
+                        submitButton.disabled = false;
+                    }, 3000);
+                }
+            });
+        }
         
         // Initialize stats
         updateStats();
