@@ -200,7 +200,8 @@
             border-top-color: rgba(0, 0, 0, 0.9);
         }
         
-        .stat-card:hover .tooltip {
+        .stat-card:hover .tooltip,
+        .stat-card.touched .tooltip {
             opacity: 1;
             visibility: visible;
         }
@@ -753,8 +754,35 @@
             });
         }
         
-        // Initialize stats
-        updateStats();
+        // Initialize stats and mobile touch handlers
+        function initializePage() {
+            updateStats();
+            
+            // Add mobile touch support for tooltips
+            if ('ontouchstart' in window) {
+                document.addEventListener('touchstart', function(e) {
+                    // Remove touched class from all cards
+                    document.querySelectorAll('.stat-card.touched').forEach(card => {
+                        card.classList.remove('touched');
+                    });
+                    
+                    // Add touched class to tapped card
+                    const statCard = e.target.closest('.stat-card');
+                    if (statCard) {
+                        e.preventDefault(); // Prevent default touch behavior
+                        statCard.classList.add('touched');
+                        
+                        // Remove touched class after 3 seconds
+                        setTimeout(() => {
+                            statCard.classList.remove('touched');
+                        }, 3000);
+                    }
+                });
+            }
+        }
+        
+        // Initialize when page loads
+        initializePage();
     </script>
 </body>
 </html>
