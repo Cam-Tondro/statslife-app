@@ -1,4 +1,78 @@
-<!DOCTYPE html>
+        // Calculate and display grouped stats
+        function updateStats() {
+            const age = parseInt(document.getElementById('age').value);
+            const gender = document.getElementById('gender').value;
+            const activity = document.getElementById('activity').value;
+            
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = '';
+            
+            statsCategories.forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'stats-category';
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'category-header';
+                headerDiv.onclick = () => toggleCategory(category.id);
+                headerDiv.innerHTML = `
+                    <div class="category-title">
+                        <div class="category-icon">${category.icon}</div>
+                        <div>${category.title}</div>
+                    </div>
+                    <div class="category-toggle">▼</div>
+                `;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'category-content';
+                contentDiv.id = `category-${category.id}`;
+                if (category.expanded) {
+                    contentDiv.classList.add('expanded');
+                }
+                
+                const statsGrid = document.createElement('div');
+                statsGrid.className = 'category-stats';
+                
+                category.stats.forEach(stat => {
+                    const value = stat.calculate(age, gender, activity);
+                    const comparison = stat.comparison ? stat.comparison(value, age) : '';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'stat-card';
+                    card.innerHTML = `
+                        <div class="stat-header">
+                            <div class="stat-icon">${stat.icon}</div>
+                            <div class="stat-title">${stat.title}</div>
+                        </div>
+                        <div class="stat-value">
+                            <div class="stat-number">${formatNumber(value)}</div>
+                            <div class="stat-details">${value.toLocaleString()}</div>
+                        </div>
+                        ${comparison ? `<div class="tooltip">${comparison}</div>` : ''}
+                    `;
+                    
+                    statsGrid.appendChild(card);
+                });
+                
+                contentDiv.appendChild(statsGrid);
+                categoryDiv.appendChild(headerDiv);
+                categoryDiv.appendChild(contentDiv);
+                statsContainer.appendChild(categoryDiv);
+            });
+        }
+        
+        // Toggle category visibility
+        function toggleCategory(categoryId) {
+            const content = document.getElementById(`category-${categoryId}`);
+            const toggle = content.parentElement.querySelector('.category-toggle');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                toggle.style.transform = 'rotate(-90deg)';
+            } else {
+                content.classList.add('expanded');
+                toggle.style.transform = 'rotate(0deg)';
+            }
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -88,11 +162,64 @@
             color: white;
         }
         
-        .stats-grid {
+        .stats-container {
+            margin-bottom: 40px;
+        }
+        
+        .stats-category {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .category-header {
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.3s ease;
+        }
+        
+        .category-header:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .category-title {
+            display: flex;
+            align-items: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .category-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+        
+        .category-toggle {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .category-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        
+        .category-content.expanded {
+            max-height: 2000px;
+            padding: 20px 30px 30px;
+        }
+        
+        .category-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
-            margin-bottom: 40px;
         }
         
         .stat-card {
@@ -276,7 +403,7 @@
             </div>
         </div>
         
-        <div class="stats-grid" id="statsGrid">
+        <div class="stats-container" id="statsContainer">
             <!-- Stats will be generated by JavaScript -->
         </div>
         
@@ -291,236 +418,259 @@
     </div>
     
     <script>
-        // Stats configuration with comparison functions
-        const statsConfig = [
+        // Grouped stats configuration
+        const statsCategories = [
             {
-                id: 'heartbeats',
-                title: 'Heartbeats',
-                icon: '❤️',
-                calculate: (age, gender, activity) => {
-                    let rate = 70; // Default baseline
-                    if (gender === 'female') rate = 75;
-                    if (gender === 'male') rate = 68;
-                    if (gender === 'other' || gender === 'prefer_not_to_say' || gender === '') {
-                        rate = 71.5; // Average of male (68) and female (75)
-                    }
-                    if (age > 60) rate -= 5;
-                    if (activity === 'sedentary') rate += 5;
-                    if (activity === 'active') rate -= 5;
-                    if (activity === 'very_active') rate -= 10;
-                    return Math.floor(age * 365.25 * 24 * 60 * rate);
-                },
-                comparison: (value) => {
-                    const bloodPerBeat = 0.07; // litres per beat
-                    const totalBlood = Math.floor(value * bloodPerBeat);
-                    const pools = Math.floor(totalBlood / 2500); // Olympic pool = 2,500,000L
-                    if (pools > 0) return `Pumped ${totalBlood.toLocaleString()}L of blood - enough to fill ${pools} Olympic swimming pools!`;
-                    return `Pumped ${totalBlood.toLocaleString()} litres of blood through your body`;
-                }
-            },
-            {
-                id: 'breaths',
-                title: 'Breaths Taken',
-                icon: '💨',
-                calculate: (age) => {
-                    const rate = age < 12 ? 20 : (age < 65 ? 16 : 18);
-                    return Math.floor(age * 365.25 * 24 * 60 * rate);
-                },
-                comparison: (value) => {
-                    const airPerBreath = 0.5; // litres per breath
-                    const totalAir = Math.floor(value * airPerBreath);
-                    const balloons = Math.floor(totalAir / 33000); // Hot air balloon = 33,000L
-                    if (balloons > 1000) return `Inhaled ${totalAir.toLocaleString()}L of air - enough to fill ${balloons.toLocaleString()} hot air balloons!`;
-                    return `Inhaled ${totalAir.toLocaleString()} litres of air into your lungs`;
-                }
-            },
-            {
-                id: 'steps',
-                title: 'Steps Walked',
-                icon: '👟',
-                calculate: (age, gender, activity) => {
-                    let dailySteps = 7500;
-                    if (activity === 'sedentary') dailySteps = 4000;
-                    if (activity === 'active') dailySteps = 10000;
-                    if (activity === 'very_active') dailySteps = 15000;
-                    return Math.floor(age * 365.25 * dailySteps);
-                },
-                comparison: (value) => {
-                    const metersPerStep = 0.75; // average step length
-                    const totalMeters = Math.floor(value * metersPerStep);
-                    const earthCircumference = 40075000; // meters
-                    const moonDistance = 384400000; // meters
-                    const timesAroundEarth = (totalMeters / earthCircumference).toFixed(1);
-                    if (totalMeters > moonDistance) {
-                        return `Walked ${totalMeters.toLocaleString()}m - that's ${timesAroundEarth} times around Earth, or ${(totalMeters/moonDistance).toFixed(1)} trips to the moon!`;
-                    }
-                    return `Walked ${totalMeters.toLocaleString()}m - that's ${timesAroundEarth} times around planet Earth!`;
-                }
-            },
-            {
-                id: 'blinks',
-                title: 'Eye Blinks',
-                icon: '👁️',
-                calculate: (age) => Math.floor(age * 365.25 * 24 * 60 * 17),
-                comparison: (value) => {
-                    const blinkDuration = 0.1; // seconds per blink
-                    const totalBlinkTime = Math.floor(value * blinkDuration);
-                    const days = Math.floor(totalBlinkTime / 86400);
-                    return `Your eyes were closed for ${totalBlinkTime.toLocaleString()} seconds total - that's ${days} days with your eyes shut!`;
-                }
-            },
-            {
-                id: 'words',
-                title: 'Words Spoken',
-                icon: '💬',
-                calculate: (age, gender, activity) => {
-                    let daily = 16000;
-                    if (activity === 'sedentary') daily = 12000;
-                    if (activity === 'very_active') daily = 20000;
-                    return Math.floor(age * 365.25 * daily);
-                },
-                comparison: (value) => {
-                    const bibleWords = 783137; // words in the Bible
-                    const bibles = (value / bibleWords).toFixed(1);
-                    const avgWordsPerMinute = 150; // speaking rate
-                    const minutesSpoken = Math.floor(value / avgWordsPerMinute);
-                    const daysSpoken = Math.floor(minutesSpoken / 1440);
-                    return `Spoke ${bibles} times the entire Bible, spending ${daysSpoken} full days of your life talking!`;
-                }
-            },
-            {
-                id: 'meals',
-                title: 'Meals Eaten',
-                icon: '🍽️',
-                calculate: (age) => Math.floor(age * 365.25 * 3),
-                comparison: (value) => {
-                    const avgMealWeight = 0.5; // kg per meal
-                    const totalFood = Math.floor(value * avgMealWeight);
-                    const elephantWeight = 6000; // kg
-                    const elephants = (totalFood / elephantWeight).toFixed(1);
-                    return `Consumed ${totalFood.toLocaleString()}kg of food - that weighs as much as ${elephants} elephants!`;
-                }
-            },
-            {
-                id: 'sleep',
-                title: 'Hours Slept',
-                icon: '😴',
-                calculate: (age, gender, activity) => {
-                    let daily = 8;
-                    if (activity === 'very_active') daily = 8.5;
-                    if (age < 18) daily = 9;
-                    if (age > 65) daily = 7;
-                    return Math.floor(age * 365.25 * daily);
-                },
-                comparison: (value, age) => {
-                    const years = (value / 8760).toFixed(1); // hours per year
-                    const percentOfLife = ((value / (age * 8760)) * 100).toFixed(0);
-                    return `Slept for ${years} years total - that's ${percentOfLife}% of your entire life in dreamland!`;
-                }
-            },
-            {
-                id: 'laughs',
-                title: 'Times Laughed',
-                icon: '😂',
-                calculate: (age) => Math.floor(age * 365.25 * 15),
-                comparison: (value) => {
-                    const secondsPerLaugh = 6; // average laugh duration
-                    const totalLaughSeconds = value * secondsPerLaugh;
-                    const hours = Math.floor(totalLaughSeconds / 3600);
-                    return `Spent ${hours.toLocaleString()} hours of your life laughing - laughter truly is the best medicine!`;
-                }
-            },
-            {
-                id: 'daysLived',
-                title: 'Days Lived',
-                icon: '📅',
-                calculate: (age) => Math.floor(age * 365.25),
-                comparison: (value, age) => {
-                    const weeks = Math.floor(value / 7);
-                    const averageLifespan = 80;
-                    const totalWeeksInLife = averageLifespan * 52;
-                    const percentLived = ((weeks / totalWeeksInLife) * 100).toFixed(1);
-                    return `That's ${weeks.toLocaleString()} weeks lived - you're ${percentLived}% through an average human lifespan!`;
-                }
-            },
-            {
-                id: 'screenTime',
-                title: 'Screen Time Hours',
-                icon: '📱',
-                calculate: (age, gender, activity) => {
-                    // Screen time wasn't a thing before ~1995-2000
-                    const currentYear = new Date().getFullYear();
-                    const birthYear = currentYear - age;
-                    const screenEraStart = 2000; // When screens became common
-                    
-                    let screenYears = 0;
-                    if (birthYear < screenEraStart) {
-                        screenYears = currentYear - screenEraStart;
-                    } else {
-                        screenYears = age;
-                    }
-                    
-                    let dailyScreenTime = 7;
-                    if (activity === 'sedentary') dailyScreenTime = 10;
-                    if (activity === 'very_active') dailyScreenTime = 4;
-                    
-                    return Math.floor(screenYears * 365.25 * dailyScreenTime);
-                },
-                comparison: (value, age) => {
-                    const years = (value / 8760).toFixed(1);
-                    const percentOfLife = age > 0 ? ((value / (age * 8760)) * 100).toFixed(1) : 0;
-                    return `Stared at screens for ${years} years total - that's ${percentOfLife}% of your life looking at pixels!`;
-                }
-            },
-            {
-                id: 'distanceWalked',
-                title: 'Distance Walked',
+                id: 'movement',
+                title: 'Movement & Travel',
                 icon: '🚶',
-                calculate: (age, gender, activity) => {
-                    let dailySteps = 7500;
-                    if (activity === 'sedentary') dailySteps = 4000;
-                    if (activity === 'active') dailySteps = 10000;
-                    if (activity === 'very_active') dailySteps = 15000;
-                    
-                    const totalSteps = Math.floor(age * 365.25 * dailySteps);
-                    const metersPerStep = 0.75; // average step length
-                    return Math.floor(totalSteps * metersPerStep);
-                },
-                comparison: (value) => {
-                    const km = Math.floor(value / 1000);
-                    const earthCircumference = 40075; // km
-                    const timesAroundEarth = (km / earthCircumference).toFixed(2);
-                    const moonDistance = 384400; // km
-                    if (km > moonDistance) {
-                        return `Walked ${km.toLocaleString()}km on foot - ${timesAroundEarth} times around Earth, enough to reach the moon!`;
+                expanded: true, // Default expanded
+                stats: [
+                    {
+                        id: 'steps',
+                        title: 'Steps Walked',
+                        icon: '👟',
+                        calculate: (age, gender, activity) => {
+                            let dailySteps = 7500;
+                            if (activity === 'sedentary') dailySteps = 4000;
+                            if (activity === 'active') dailySteps = 10000;
+                            if (activity === 'very_active') dailySteps = 15000;
+                            return Math.floor(age * 365.25 * dailySteps);
+                        },
+                        comparison: (value) => {
+                            const metersPerStep = 0.75;
+                            const totalMeters = Math.floor(value * metersPerStep);
+                            const earthCircumference = 40075000;
+                            const timesAroundEarth = (totalMeters / earthCircumference).toFixed(2);
+                            return `Walked ${totalMeters.toLocaleString()}m - that's ${timesAroundEarth} times around planet Earth!`;
+                        }
+                    },
+                    {
+                        id: 'distanceWalked',
+                        title: 'Distance Walked',
+                        icon: '🚶',
+                        calculate: (age, gender, activity) => {
+                            let dailySteps = 7500;
+                            if (activity === 'sedentary') dailySteps = 4000;
+                            if (activity === 'active') dailySteps = 10000;
+                            if (activity === 'very_active') dailySteps = 15000;
+                            
+                            const totalSteps = Math.floor(age * 365.25 * dailySteps);
+                            const metersPerStep = 0.75;
+                            return Math.floor(totalSteps * metersPerStep);
+                        },
+                        comparison: (value) => {
+                            const km = Math.floor(value / 1000);
+                            const earthCircumference = 40075;
+                            const timesAroundEarth = (km / earthCircumference).toFixed(2);
+                            const moonDistance = 384400;
+                            if (km > moonDistance) {
+                                return `Walked ${km.toLocaleString()}km on foot - enough to reach the moon!`;
+                            }
+                            return `Walked ${km.toLocaleString()}km on foot - ${timesAroundEarth} times around Earth!`;
+                        }
+                    },
+                    {
+                        id: 'carDistance',
+                        title: 'Distance by Car',
+                        icon: '🚗',
+                        calculate: (age, gender, activity) => {
+                            const drivingAge = Math.max(0, age - 17);
+                            let dailyKm = 40;
+                            if (activity === 'sedentary') dailyKm = 50;
+                            if (activity === 'very_active') dailyKm = 25;
+                            return Math.floor(drivingAge * 365.25 * dailyKm);
+                        },
+                        comparison: (value) => {
+                            const earthCircumference = 40075;
+                            const timesAroundEarth = (value / earthCircumference).toFixed(1);
+                            const moonDistance = 384400;
+                            if (value > moonDistance) {
+                                return `Driven ${value.toLocaleString()}km - far enough to reach the moon!`;
+                            }
+                            return `Driven ${value.toLocaleString()}km - ${timesAroundEarth} times around Earth!`;
+                        }
                     }
-                    return `Walked ${km.toLocaleString()}km on foot - that's ${timesAroundEarth} times around planet Earth!`;
-                }
+                ]
             },
             {
-                id: 'carDistance',
-                title: 'Distance by Car',
-                icon: '🚗',
-                calculate: (age, gender, activity) => {
-                    // Average varies dramatically by country/era
-                    // Starting driving around 16-18, modern car usage
-                    const drivingAge = Math.max(0, age - 17);
-                    let dailyKm = 40; // Global average
-                    
-                    if (activity === 'sedentary') dailyKm = 50; // Office workers drive more
-                    if (activity === 'very_active') dailyKm = 25; // Active people often use cars less
-                    
-                    return Math.floor(drivingAge * 365.25 * dailyKm);
-                },
-                comparison: (value) => {
-                    const earthCircumference = 40075; // km
-                    const timesAroundEarth = (value / earthCircumference).toFixed(1);
-                    const moonDistance = 384400; // km
-                    if (value > moonDistance) {
-                        return `Driven ${value.toLocaleString()}km - ${timesAroundEarth} times around Earth, far enough to reach the moon!`;
+                id: 'health',
+                title: 'Body & Health',
+                icon: '❤️',
+                expanded: true,
+                stats: [
+                    {
+                        id: 'heartbeats',
+                        title: 'Heartbeats',
+                        icon: '❤️',
+                        calculate: (age, gender, activity) => {
+                            let rate = 70;
+                            if (gender === 'female') rate = 75;
+                            if (gender === 'male') rate = 68;
+                            if (gender === 'other' || gender === 'prefer_not_to_say' || gender === '') {
+                                rate = 71.5;
+                            }
+                            if (age > 60) rate -= 5;
+                            if (activity === 'sedentary') rate += 5;
+                            if (activity === 'active') rate -= 5;
+                            if (activity === 'very_active') rate -= 10;
+                            return Math.floor(age * 365.25 * 24 * 60 * rate);
+                        },
+                        comparison: (value) => {
+                            const bloodPerBeat = 0.07;
+                            const totalBlood = Math.floor(value * bloodPerBeat);
+                            const pools = Math.floor(totalBlood / 2500);
+                            if (pools > 0) return `Pumped ${totalBlood.toLocaleString()}L of blood - enough to fill ${pools} Olympic swimming pools!`;
+                            return `Pumped ${totalBlood.toLocaleString()} litres of blood through your body`;
+                        }
+                    },
+                    {
+                        id: 'breaths',
+                        title: 'Breaths Taken',
+                        icon: '💨',
+                        calculate: (age) => {
+                            const rate = age < 12 ? 20 : (age < 65 ? 16 : 18);
+                            return Math.floor(age * 365.25 * 24 * 60 * rate);
+                        },
+                        comparison: (value) => {
+                            const airPerBreath = 0.5;
+                            const totalAir = Math.floor(value * airPerBreath);
+                            const balloons = Math.floor(totalAir / 33000);
+                            if (balloons > 1000) return `Inhaled ${totalAir.toLocaleString()}L of air - enough to fill ${balloons.toLocaleString()} hot air balloons!`;
+                            return `Inhaled ${totalAir.toLocaleString()} litres of air into your lungs`;
+                        }
+                    },
+                    {
+                        id: 'sleep',
+                        title: 'Hours Slept',
+                        icon: '😴',
+                        calculate: (age, gender, activity) => {
+                            let daily = 8;
+                            if (activity === 'very_active') daily = 8.5;
+                            if (age < 18) daily = 9;
+                            if (age > 65) daily = 7;
+                            return Math.floor(age * 365.25 * daily);
+                        },
+                        comparison: (value, age) => {
+                            const years = (value / 8760).toFixed(1);
+                            const percentOfLife = ((value / (age * 8760)) * 100).toFixed(0);
+                            return `Slept for ${years} years total - that's ${percentOfLife}% of your entire life in dreamland!`;
+                        }
                     }
-                    return `Driven ${value.toLocaleString()}km - that's ${timesAroundEarth} times around our planet!`;
-                }
+                ]
+            },
+            {
+                id: 'daily',
+                title: 'Daily Life',
+                icon: '👁️',
+                expanded: false,
+                stats: [
+                    {
+                        id: 'blinks',
+                        title: 'Eye Blinks',
+                        icon: '👁️',
+                        calculate: (age) => Math.floor(age * 365.25 * 24 * 60 * 17),
+                        comparison: (value) => {
+                            const blinkDuration = 0.1;
+                            const totalBlinkTime = Math.floor(value * blinkDuration);
+                            const days = Math.floor(totalBlinkTime / 86400);
+                            return `Your eyes were closed for ${totalBlinkTime.toLocaleString()} seconds total - that's ${days} days with your eyes shut!`;
+                        }
+                    },
+                    {
+                        id: 'screenTime',
+                        title: 'Screen Time Hours',
+                        icon: '📱',
+                        calculate: (age, gender, activity) => {
+                            const currentYear = new Date().getFullYear();
+                            const birthYear = currentYear - age;
+                            const screenEraStart = 2000;
+                            
+                            let screenYears = 0;
+                            if (birthYear < screenEraStart) {
+                                screenYears = currentYear - screenEraStart;
+                            } else {
+                                screenYears = age;
+                            }
+                            
+                            let dailyScreenTime = 7;
+                            if (activity === 'sedentary') dailyScreenTime = 10;
+                            if (activity === 'very_active') dailyScreenTime = 4;
+                            
+                            return Math.floor(screenYears * 365.25 * dailyScreenTime);
+                        },
+                        comparison: (value, age) => {
+                            const years = (value / 8760).toFixed(1);
+                            const percentOfLife = age > 0 ? ((value / (age * 8760)) * 100).toFixed(1) : 0;
+                            return `Stared at screens for ${years} years total - that's ${percentOfLife}% of your life looking at pixels!`;
+                        }
+                    },
+                    {
+                        id: 'words',
+                        title: 'Words Spoken',
+                        icon: '💬',
+                        calculate: (age, gender, activity) => {
+                            let daily = 16000;
+                            if (activity === 'sedentary') daily = 12000;
+                            if (activity === 'very_active') daily = 20000;
+                            return Math.floor(age * 365.25 * daily);
+                        },
+                        comparison: (value) => {
+                            const bibleWords = 783137;
+                            const bibles = (value / bibleWords).toFixed(1);
+                            const avgWordsPerMinute = 150;
+                            const minutesSpoken = Math.floor(value / avgWordsPerMinute);
+                            const daysSpoken = Math.floor(minutesSpoken / 1440);
+                            return `Spoke ${bibles} times the entire Bible, spending ${daysSpoken} full days of your life talking!`;
+                        }
+                    },
+                    {
+                        id: 'laughs',
+                        title: 'Times Laughed',
+                        icon: '😂',
+                        calculate: (age) => Math.floor(age * 365.25 * 15),
+                        comparison: (value) => {
+                            const secondsPerLaugh = 6;
+                            const totalLaughSeconds = value * secondsPerLaugh;
+                            const hours = Math.floor(totalLaughSeconds / 3600);
+                            return `Spent ${hours.toLocaleString()} hours of your life laughing - laughter truly is the best medicine!`;
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'life',
+                title: 'Life Experiences',
+                icon: '🍽️',
+                expanded: false,
+                stats: [
+                    {
+                        id: 'daysLived',
+                        title: 'Days Lived',
+                        icon: '📅',
+                        calculate: (age) => Math.floor(age * 365.25),
+                        comparison: (value, age) => {
+                            const weeks = Math.floor(value / 7);
+                            const averageLifespan = 80;
+                            const totalWeeksInLife = averageLifespan * 52;
+                            const percentLived = ((weeks / totalWeeksInLife) * 100).toFixed(1);
+                            return `That's ${weeks.toLocaleString()} weeks lived - you're ${percentLived}% through an average human lifespan!`;
+                        }
+                    },
+                    {
+                        id: 'meals',
+                        title: 'Meals Eaten',
+                        icon: '🍽️',
+                        calculate: (age) => Math.floor(age * 365.25 * 3),
+                        comparison: (value) => {
+                            const avgMealWeight = 0.5;
+                            const totalFood = Math.floor(value * avgMealWeight);
+                            const elephantWeight = 6000;
+                            const elephants = (totalFood / elephantWeight).toFixed(1);
+                            return `Consumed ${totalFood.toLocaleString()}kg of food - that weighs as much as ${elephants} elephants!`;
+                        }
+                    }
+                ]
             }
         ];
         
