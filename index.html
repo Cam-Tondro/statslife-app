@@ -429,6 +429,98 @@
                     const hours = Math.floor(totalLaughSeconds / 3600);
                     return `Spent ${hours.toLocaleString()} hours of your life laughing - laughter truly is the best medicine!`;
                 }
+            },
+            {
+                id: 'daysLived',
+                title: 'Days Lived',
+                icon: '📅',
+                calculate: (age) => Math.floor(age * 365.25),
+                comparison: (value, age) => {
+                    const weeks = Math.floor(value / 7);
+                    const averageLifespan = 80;
+                    const totalWeeksInLife = averageLifespan * 52;
+                    const percentLived = ((weeks / totalWeeksInLife) * 100).toFixed(1);
+                    return `That's ${weeks.toLocaleString()} weeks lived - you're ${percentLived}% through an average human lifespan!`;
+                }
+            },
+            {
+                id: 'screenTime',
+                title: 'Screen Time Hours',
+                icon: '📱',
+                calculate: (age, gender, activity) => {
+                    // Screen time wasn't a thing before ~1995-2000
+                    const currentYear = new Date().getFullYear();
+                    const birthYear = currentYear - age;
+                    const screenEraStart = 2000; // When screens became common
+                    
+                    let screenYears = 0;
+                    if (birthYear < screenEraStart) {
+                        screenYears = currentYear - screenEraStart;
+                    } else {
+                        screenYears = age;
+                    }
+                    
+                    let dailyScreenTime = 7;
+                    if (activity === 'sedentary') dailyScreenTime = 10;
+                    if (activity === 'very_active') dailyScreenTime = 4;
+                    
+                    return Math.floor(screenYears * 365.25 * dailyScreenTime);
+                },
+                comparison: (value, age) => {
+                    const years = (value / 8760).toFixed(1);
+                    const percentOfLife = age > 0 ? ((value / (age * 8760)) * 100).toFixed(1) : 0;
+                    return `Stared at screens for ${years} years total - that's ${percentOfLife}% of your life looking at pixels!`;
+                }
+            },
+            {
+                id: 'distanceWalked',
+                title: 'Distance Walked',
+                icon: '🚶',
+                calculate: (age, gender, activity) => {
+                    let dailySteps = 7500;
+                    if (activity === 'sedentary') dailySteps = 4000;
+                    if (activity === 'active') dailySteps = 10000;
+                    if (activity === 'very_active') dailySteps = 15000;
+                    
+                    const totalSteps = Math.floor(age * 365.25 * dailySteps);
+                    const metersPerStep = 0.75; // average step length
+                    return Math.floor(totalSteps * metersPerStep);
+                },
+                comparison: (value) => {
+                    const km = Math.floor(value / 1000);
+                    const earthCircumference = 40075; // km
+                    const timesAroundEarth = (km / earthCircumference).toFixed(2);
+                    const moonDistance = 384400; // km
+                    if (km > moonDistance) {
+                        return `Walked ${km.toLocaleString()}km on foot - ${timesAroundEarth} times around Earth, enough to reach the moon!`;
+                    }
+                    return `Walked ${km.toLocaleString()}km on foot - that's ${timesAroundEarth} times around planet Earth!`;
+                }
+            },
+            {
+                id: 'carDistance',
+                title: 'Distance by Car',
+                icon: '🚗',
+                calculate: (age, gender, activity) => {
+                    // Average varies dramatically by country/era
+                    // Starting driving around 16-18, modern car usage
+                    const drivingAge = Math.max(0, age - 17);
+                    let dailyKm = 40; // Global average
+                    
+                    if (activity === 'sedentary') dailyKm = 50; // Office workers drive more
+                    if (activity === 'very_active') dailyKm = 25; // Active people often use cars less
+                    
+                    return Math.floor(drivingAge * 365.25 * dailyKm);
+                },
+                comparison: (value) => {
+                    const earthCircumference = 40075; // km
+                    const timesAroundEarth = (value / earthCircumference).toFixed(1);
+                    const moonDistance = 384400; // km
+                    if (value > moonDistance) {
+                        return `Driven ${value.toLocaleString()}km - ${timesAroundEarth} times around Earth, far enough to reach the moon!`;
+                    }
+                    return `Driven ${value.toLocaleString()}km - that's ${timesAroundEarth} times around our planet!`;
+                }
             }
         ];
         
