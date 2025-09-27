@@ -412,7 +412,7 @@
                     if (age > 65) daily = 7;
                     return Math.floor(age * 365.25 * daily);
                 },
-                comparison: (value) => {
+                comparison: (value, age) => {
                     const years = (value / 8760).toFixed(1); // hours per year
                     const percentOfLife = ((value / (age * 8760)) * 100).toFixed(0);
                     return `Slept for ${years} years total - that's ${percentOfLife}% of your entire life in dreamland!`;
@@ -457,7 +457,7 @@
             
             statsConfig.forEach(stat => {
                 const value = stat.calculate(age, gender, activity);
-                const comparison = stat.comparison ? stat.comparison(value) : '';
+                const comparison = stat.comparison ? stat.comparison(value, age) : '';
                 
                 const card = document.createElement('div');
                 card.className = 'stat-card';
