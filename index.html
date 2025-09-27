@@ -1,78 +1,4 @@
-        // Calculate and display grouped stats
-        function updateStats() {
-            const age = parseInt(document.getElementById('age').value);
-            const gender = document.getElementById('gender').value;
-            const activity = document.getElementById('activity').value;
-            
-            const statsContainer = document.getElementById('statsContainer');
-            statsContainer.innerHTML = '';
-            
-            statsCategories.forEach(category => {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'stats-category';
-                
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'category-header';
-                headerDiv.onclick = () => toggleCategory(category.id);
-                headerDiv.innerHTML = `
-                    <div class="category-title">
-                        <div class="category-icon">${category.icon}</div>
-                        <div>${category.title}</div>
-                    </div>
-                    <div class="category-toggle">▼</div>
-                `;
-                
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'category-content';
-                contentDiv.id = `category-${category.id}`;
-                if (category.expanded) {
-                    contentDiv.classList.add('expanded');
-                }
-                
-                const statsGrid = document.createElement('div');
-                statsGrid.className = 'category-stats';
-                
-                category.stats.forEach(stat => {
-                    const value = stat.calculate(age, gender, activity);
-                    const comparison = stat.comparison ? stat.comparison(value, age) : '';
-                    
-                    const card = document.createElement('div');
-                    card.className = 'stat-card';
-                    card.innerHTML = `
-                        <div class="stat-header">
-                            <div class="stat-icon">${stat.icon}</div>
-                            <div class="stat-title">${stat.title}</div>
-                        </div>
-                        <div class="stat-value">
-                            <div class="stat-number">${formatNumber(value)}</div>
-                            <div class="stat-details">${value.toLocaleString()}</div>
-                        </div>
-                        ${comparison ? `<div class="tooltip">${comparison}</div>` : ''}
-                    `;
-                    
-                    statsGrid.appendChild(card);
-                });
-                
-                contentDiv.appendChild(statsGrid);
-                categoryDiv.appendChild(headerDiv);
-                categoryDiv.appendChild(contentDiv);
-                statsContainer.appendChild(categoryDiv);
-            });
-        }
-        
-        // Toggle category visibility
-        function toggleCategory(categoryId) {
-            const content = document.getElementById(`category-${categoryId}`);
-            const toggle = content.parentElement.querySelector('.category-toggle');
-            
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                toggle.style.transform = 'rotate(-90deg)';
-            } else {
-                content.classList.add('expanded');
-                toggle.style.transform = 'rotate(0deg)';
-            }
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -358,7 +284,7 @@
                 font-size: 2.5rem;
             }
             
-            .stats-grid {
+            .category-stats {
                 grid-template-columns: 1fr;
             }
             
@@ -424,7 +350,7 @@
                 id: 'movement',
                 title: 'Movement & Travel',
                 icon: '🚶',
-                expanded: true, // Default expanded
+                expanded: true,
                 stats: [
                     {
                         id: 'steps',
@@ -688,35 +614,80 @@
             return num.toLocaleString();
         }
         
-        // Calculate and display stats
+        // Calculate and display grouped stats
         function updateStats() {
             const age = parseInt(document.getElementById('age').value);
             const gender = document.getElementById('gender').value;
             const activity = document.getElementById('activity').value;
             
-            const statsGrid = document.getElementById('statsGrid');
-            statsGrid.innerHTML = '';
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = '';
             
-            statsConfig.forEach(stat => {
-                const value = stat.calculate(age, gender, activity);
-                const comparison = stat.comparison ? stat.comparison(value, age) : '';
+            statsCategories.forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'stats-category';
                 
-                const card = document.createElement('div');
-                card.className = 'stat-card';
-                card.innerHTML = `
-                    <div class="stat-header">
-                        <div class="stat-icon">${stat.icon}</div>
-                        <div class="stat-title">${stat.title}</div>
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'category-header';
+                headerDiv.onclick = () => toggleCategory(category.id);
+                headerDiv.innerHTML = `
+                    <div class="category-title">
+                        <div class="category-icon">${category.icon}</div>
+                        <div>${category.title}</div>
                     </div>
-                    <div class="stat-value">
-                        <div class="stat-number">${formatNumber(value)}</div>
-                        <div class="stat-details">${value.toLocaleString()}</div>
-                    </div>
-                    ${comparison ? `<div class="tooltip">${comparison}</div>` : ''}
+                    <div class="category-toggle">▼</div>
                 `;
                 
-                statsGrid.appendChild(card);
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'category-content';
+                contentDiv.id = `category-${category.id}`;
+                if (category.expanded) {
+                    contentDiv.classList.add('expanded');
+                }
+                
+                const statsGrid = document.createElement('div');
+                statsGrid.className = 'category-stats';
+                
+                category.stats.forEach(stat => {
+                    const value = stat.calculate(age, gender, activity);
+                    const comparison = stat.comparison ? stat.comparison(value, age) : '';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'stat-card';
+                    card.innerHTML = `
+                        <div class="stat-header">
+                            <div class="stat-icon">${stat.icon}</div>
+                            <div class="stat-title">${stat.title}</div>
+                        </div>
+                        <div class="stat-value">
+                            <div class="stat-number">${formatNumber(value)}</div>
+                            <div class="stat-details">${value.toLocaleString()}</div>
+                        </div>
+                        ${comparison ? `<div class="tooltip">${comparison}</div>` : ''}
+                    `;
+                    
+                    statsGrid.appendChild(card);
+                });
+                
+                contentDiv.appendChild(statsGrid);
+                categoryDiv.appendChild(headerDiv);
+                categoryDiv.appendChild(contentDiv);
+                statsContainer.appendChild(categoryDiv);
             });
+        }
+        
+        // Toggle category visibility
+        function toggleCategory(categoryId) {
+            const content = document.getElementById(`category-${categoryId}`);
+            const toggle = content.parentElement.querySelector('.category-toggle');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                toggle.style.transform = 'rotate(-90deg)';
+            } else {
+                content.classList.add('expanded');
+                toggle.style.transform = 'rotate(0deg)';
+            }
         }
         
         // Event listeners
