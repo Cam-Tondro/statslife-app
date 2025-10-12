@@ -493,9 +493,10 @@
     
     <script>
         // Initialize Supabase
+        const { createClient } = supabase;
         const supabaseUrl = 'https://jwturvypxvrbeiisycbp.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dHVydnlweHZyYmVpaXN5Y2JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyMDU5MDMsImV4cCI6MjA3NTc4MTkwM30.BIa7_R2dSR2NCUZZ372RiVolaxu5WhMs1CdSCxuyEmo';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
         
         let currentUser = null;
         let userProfile = null;
@@ -860,7 +861,7 @@
         
         // Authentication functions
         async function signInWithGoogle() {
-            const { data, error } = await supabase.auth.signInWithOAuth({
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: window.location.origin
@@ -870,14 +871,14 @@
         }
         
         async function signOut() {
-            const { error } = await supabase.auth.signOut();
+            const { error } = await supabaseClient.auth.signOut();
             if (error) console.error('Error signing out:', error);
             location.reload();
         }
         
         // Load user profile from database
         async function loadUserProfile(userId) {
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('user_profiles')
                 .select('*')
                 .eq('user_id', userId)
@@ -903,7 +904,7 @@
                 return;
             }
             
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('user_profiles')
                 .upsert({
                     user_id: currentUser.id,
@@ -947,7 +948,7 @@
         // Initialize app
         async function initializeApp() {
             // Check current auth state
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             
             if (session?.user) {
                 currentUser = session.user;
@@ -973,7 +974,7 @@
             }
             
             // Listen for auth changes
-            supabase.auth.onAuthStateChange(async (event, session) => {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (event === 'SIGNED_IN' && session?.user) {
                     currentUser = session.user;
                     updateUI(currentUser);
