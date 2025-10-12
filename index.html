@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StatsLife - Your Life in Numbers</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -27,6 +28,39 @@
         .header {
             text-align: center;
             margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .auth-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .auth-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .google-icon {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .header h1 {
@@ -44,6 +78,22 @@
             opacity: 0.9;
             max-width: 600px;
             margin: 0 auto 40px;
+        }
+        
+        .profile-setup {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .profile-setup h2 {
+            margin-bottom: 24px;
+            font-size: 1.8rem;
         }
         
         .controls {
@@ -86,6 +136,28 @@
         .form-group select option {
             background: #333;
             color: white;
+        }
+        
+        .form-group input[type="date"] {
+            color-scheme: dark;
+        }
+        
+        .save-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, #10b981, #059669);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .save-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
         
         .stats-container {
@@ -304,9 +376,18 @@
             transform: scale(1.05);
         }
         
+        .hidden {
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2.5rem;
+            }
+            
+            .auth-button {
+                position: static;
+                margin: 0 auto 20px;
             }
             
             .category-stats {
@@ -322,11 +403,53 @@
 <body>
     <div class="container">
         <header class="header">
+            <button id="authButton" class="auth-button hidden">
+                <span class="google-icon">G</span>
+                <span id="authButtonText">Sign in with Google</span>
+            </button>
             <h1>StatsLife</h1>
             <p>Your life in numbers - like a video game achievement system for reality. Discover the incredible statistics of your everyday existence.</p>
         </header>
         
-        <div class="controls">
+        <!-- Profile Setup Form (shown after first login) -->
+        <div id="profileSetup" class="profile-setup hidden">
+            <h2>Complete Your Profile</h2>
+            <div class="form-group">
+                <label for="dateOfBirth">Date of Birth</label>
+                <input type="date" id="dateOfBirth" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="profileGender">Gender (affects heart rate)</label>
+                <select id="profileGender">
+                    <option value="">Please select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer_not_to_say">I'd rather not say</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="profileActivity">Activity Level</label>
+                <select id="profileActivity">
+                    <option value="sedentary">Sedentary (office job, minimal exercise)</option>
+                    <option value="average">Average (some walking, occasional exercise)</option>
+                    <option value="active">Active (regular exercise, 10k+ steps)</option>
+                    <option value="very_active">Very Active (athlete, daily intense exercise)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="profileCountry">Country (optional)</label>
+                <input type="text" id="profileCountry" placeholder="e.g., Australia">
+            </div>
+            
+            <button class="save-button" onclick="saveProfile()">Save Profile & View My Stats</button>
+        </div>
+        
+        <!-- Stats Controls (hidden until profile complete) -->
+        <div id="statsControls" class="controls hidden">
             <div class="form-group">
                 <label for="age">Your Age</label>
                 <input type="number" id="age" value="25" min="1" max="120">
@@ -360,7 +483,7 @@
         
         <div class="coming-soon">
             <h2>🚀 More Features Coming Soon!</h2>
-            <p>AI-powered custom stats, sharing features, achievements, and so much more. Be the first to know when we launch new features!</p>
+            <p>AI-powered custom stats, milestone notifications, Life Grid visualization, and so much more. Be the first to know when we launch new features!</p>
             <form class="email-form" action="https://formspree.io/f/meorozar" method="POST">
                 <input type="email" name="email" class="email-input" placeholder="Enter your email" required>
                 <button type="submit" class="email-button">Notify Me</button>
@@ -369,6 +492,14 @@
     </div>
     
     <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://jwturvypxvrbeiisycbp.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3dHVydnlweHZyYmVpaXN5Y2JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyMDU5MDMsImV4cCI6MjA3NTc4MTkwM30.BIa7_R2dSR2NCUZZ372RiVolaxu5WhMs1CdSCxuyEmo';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let currentUser = null;
+        let userProfile = null;
+        
         // Grouped stats configuration
         const statsCategories = [
             {
@@ -639,11 +770,23 @@
             return num.toLocaleString();
         }
         
+        // Calculate age from DOB
+        function calculateAge(dob) {
+            const birthDate = new Date(dob);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+        
         // Calculate and display grouped stats
         function updateStats() {
-            const age = parseInt(document.getElementById('age').value);
-            const gender = document.getElementById('gender').value;
-            const activity = document.getElementById('activity').value;
+            const age = userProfile ? calculateAge(userProfile.date_of_birth) : parseInt(document.getElementById('age').value);
+            const gender = userProfile ? userProfile.gender : document.getElementById('gender').value;
+            const activity = userProfile ? userProfile.activity_level : document.getElementById('activity').value;
             
             const statsContainer = document.getElementById('statsContainer');
             statsContainer.innerHTML = '';
@@ -715,12 +858,176 @@
             }
         }
         
-        // Event listeners
-        document.getElementById('age').addEventListener('input', updateStats);
-        document.getElementById('gender').addEventListener('change', updateStats);
-        document.getElementById('activity').addEventListener('change', updateStats);
+        // Authentication functions
+        async function signInWithGoogle() {
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
+            if (error) console.error('Error signing in:', error);
+        }
         
-        // Email form with AJAX submission (stays on page)
+        async function signOut() {
+            const { error } = await supabase.auth.signOut();
+            if (error) console.error('Error signing out:', error);
+            location.reload();
+        }
+        
+        // Load user profile from database
+        async function loadUserProfile(userId) {
+            const { data, error } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+            
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error loading profile:', error);
+                return null;
+            }
+            
+            return data;
+        }
+        
+        // Save user profile to database
+        async function saveProfile() {
+            const dob = document.getElementById('dateOfBirth').value;
+            const gender = document.getElementById('profileGender').value;
+            const activity = document.getElementById('profileActivity').value;
+            const country = document.getElementById('profileCountry').value;
+            
+            if (!dob || !gender) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const { data, error } = await supabase
+                .from('user_profiles')
+                .upsert({
+                    user_id: currentUser.id,
+                    date_of_birth: dob,
+                    gender: gender,
+                    activity_level: activity,
+                    country: country || null,
+                    updated_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+            
+            if (error) {
+                console.error('Error saving profile:', error);
+                alert('Error saving profile. Please try again.');
+                return;
+            }
+            
+            userProfile = data;
+            document.getElementById('profileSetup').classList.add('hidden');
+            document.getElementById('statsContainer').classList.remove('hidden');
+            updateStats();
+        }
+        
+        // Update UI based on auth state
+        function updateUI(user) {
+            const authButton = document.getElementById('authButton');
+            const authButtonText = document.getElementById('authButtonText');
+            
+            authButton.classList.remove('hidden');
+            
+            if (user) {
+                authButtonText.textContent = 'Sign Out';
+                authButton.onclick = signOut;
+            } else {
+                authButtonText.textContent = 'Sign in with Google';
+                authButton.onclick = signInWithGoogle;
+            }
+        }
+        
+        // Initialize app
+        async function initializeApp() {
+            // Check current auth state
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session?.user) {
+                currentUser = session.user;
+                updateUI(currentUser);
+                
+                // Load user profile
+                userProfile = await loadUserProfile(currentUser.id);
+                
+                if (userProfile) {
+                    // Profile exists, show stats
+                    document.getElementById('statsContainer').classList.remove('hidden');
+                    updateStats();
+                } else {
+                    // No profile yet, show setup form
+                    document.getElementById('profileSetup').classList.remove('hidden');
+                }
+            } else {
+                // Not logged in, show stats with manual controls
+                updateUI(null);
+                document.getElementById('statsControls').classList.remove('hidden');
+                document.getElementById('statsContainer').classList.remove('hidden');
+                updateStats();
+            }
+            
+            // Listen for auth changes
+            supabase.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN' && session?.user) {
+                    currentUser = session.user;
+                    updateUI(currentUser);
+                    
+                    // Check if profile exists
+                    userProfile = await loadUserProfile(currentUser.id);
+                    
+                    if (userProfile) {
+                        document.getElementById('profileSetup').classList.add('hidden');
+                        document.getElementById('statsControls').classList.add('hidden');
+                        document.getElementById('statsContainer').classList.remove('hidden');
+                        updateStats();
+                    } else {
+                        document.getElementById('statsControls').classList.add('hidden');
+                        document.getElementById('statsContainer').classList.add('hidden');
+                        document.getElementById('profileSetup').classList.remove('hidden');
+                    }
+                } else if (event === 'SIGNED_OUT') {
+                    currentUser = null;
+                    userProfile = null;
+                    updateUI(null);
+                    document.getElementById('profileSetup').classList.add('hidden');
+                    document.getElementById('statsControls').classList.remove('hidden');
+                    document.getElementById('statsContainer').classList.remove('hidden');
+                    updateStats();
+                }
+            });
+            
+            // Add event listeners for manual controls (when not logged in)
+            document.getElementById('age').addEventListener('input', updateStats);
+            document.getElementById('gender').addEventListener('change', updateStats);
+            document.getElementById('activity').addEventListener('change', updateStats);
+            
+            // Add mobile touch support for tooltips
+            if ('ontouchstart' in window) {
+                document.addEventListener('touchstart', function(e) {
+                    document.querySelectorAll('.stat-card.touched').forEach(card => {
+                        card.classList.remove('touched');
+                    });
+                    
+                    const statCard = e.target.closest('.stat-card');
+                    if (statCard) {
+                        e.preventDefault();
+                        statCard.classList.add('touched');
+                        
+                        setTimeout(() => {
+                            statCard.classList.remove('touched');
+                        }, 3000);
+                    }
+                });
+            }
+        }
+        
+        // Email form with AJAX submission
         const emailForm = document.querySelector('.email-form');
         if (emailForm) {
             emailForm.addEventListener('submit', async function(e) {
@@ -730,7 +1037,6 @@
                 const submitButton = this.querySelector('.email-button');
                 const originalText = submitButton.textContent;
                 
-                // Show loading state
                 submitButton.textContent = 'Sending...';
                 submitButton.disabled = true;
                 
@@ -744,12 +1050,10 @@
                     });
                     
                     if (response.ok) {
-                        // Success!
                         submitButton.textContent = 'Thank You!';
                         submitButton.style.background = '#10b981';
                         this.querySelector('.email-input').value = '';
                         
-                        // Reset after 3 seconds
                         setTimeout(() => {
                             submitButton.textContent = originalText;
                             submitButton.style.background = '';
@@ -759,7 +1063,6 @@
                         throw new Error('Network response was not ok');
                     }
                 } catch (error) {
-                    // Error handling
                     submitButton.textContent = 'Try Again';
                     submitButton.style.background = '#ef4444';
                     
@@ -772,35 +1075,8 @@
             });
         }
         
-        // Initialize stats and mobile touch handlers
-        function initializePage() {
-            updateStats();
-            
-            // Add mobile touch support for tooltips
-            if ('ontouchstart' in window) {
-                document.addEventListener('touchstart', function(e) {
-                    // Remove touched class from all cards
-                    document.querySelectorAll('.stat-card.touched').forEach(card => {
-                        card.classList.remove('touched');
-                    });
-                    
-                    // Add touched class to tapped card
-                    const statCard = e.target.closest('.stat-card');
-                    if (statCard) {
-                        e.preventDefault(); // Prevent default touch behavior
-                        statCard.classList.add('touched');
-                        
-                        // Remove touched class after 3 seconds
-                        setTimeout(() => {
-                            statCard.classList.remove('touched');
-                        }, 3000);
-                    }
-                });
-            }
-        }
-        
-        // Initialize when page loads
-        initializePage();
+        // Start the app
+        initializeApp();
     </script>
 </body>
 </html>
