@@ -904,22 +904,46 @@
                 return;
             }
             
-            const { data, error } = await supabaseClient
+            const profileData = {
+                user_id: currentUser.id,
+                date_of_birth: dob,
+                gender: gender,
+                activity_level: activity,
+                country: country || null,
+                updated_at: new Date().toISOString()
+            };
+            
+            // Try to insert first, if it fails due to duplicate, update instead
+            let { data, error } = await supabaseClient
                 .from('user_profiles')
-                .upsert({
-                    user_id: currentUser.id,
-                    date_of_birth: dob,
-                    gender: gender,
-                    activity_level: activity,
-                    country: country || null,
-                    updated_at: new Date().toISOString()
-                })
+                .insert(profileData)
                 .select()
                 .single();
             
             if (error) {
+                // If duplicate key error, try update instead
+                if (error.code === '23505') {
+                    const updateResult = await supabaseClient
+                        .from('user_profiles')
+                        .update({
+                            date_of_birth: dob,
+                            gender: gender,
+                            activity_level: activity,
+                            country: country || null,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', currentUser.id)
+                        .select()
+                        .single();
+                    
+                    data = updateResult.data;
+                    error = updateResult.error;
+                }
+            }
+            
+            if (error) {
                 console.error('Error saving profile:', error);
-                alert('Error saving profile. Please try again.');
+                alert('Error saving profile: ' + (error.message || 'Please try again.'));
                 return;
             }
             
