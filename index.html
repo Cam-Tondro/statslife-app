@@ -904,13 +904,15 @@
                 return;
             }
             
+            const now = new Date().toISOString();
             const profileData = {
                 user_id: currentUser.id,
                 date_of_birth: dob,
                 gender: gender,
                 activity_level: activity,
                 country: country || null,
-                updated_at: new Date().toISOString()
+                created_at: now,
+                updated_at: now
             };
             
             // Try to insert first, if it fails due to duplicate, update instead
@@ -930,7 +932,7 @@
                             gender: gender,
                             activity_level: activity,
                             country: country || null,
-                            updated_at: new Date().toISOString()
+                            updated_at: now
                         })
                         .eq('user_id', currentUser.id)
                         .select()
